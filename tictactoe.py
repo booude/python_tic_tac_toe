@@ -18,7 +18,7 @@ class Board:
         self.empty_sqrs = self.squares
         self.marked_sqrs = 0
 
-    def final_state(self):
+    def final_state(self, show=False):
         for col in range(COLS):
             if (
                 self.squares[0][col]
@@ -26,6 +26,11 @@ class Board:
                 == self.squares[2][col]
                 != 0
             ):
+                if show:
+                    color = CIRC_COLOR if self.squares[0][col] == 2 else CROSS_COLOR
+                    iPos = (col * SQSIZE + SQSIZE // 2, 20)
+                    fPos = (col * SQSIZE + SQSIZE // 2, HEIGHT - 20)
+                    p.draw.line(screen, color, iPos, fPos, LINE_WIDTH)
                 return self.squares[0][col]
 
         for row in range(ROWS):
@@ -35,12 +40,27 @@ class Board:
                 == self.squares[row][2]
                 != 0
             ):
+                if show:
+                    color = CIRC_COLOR if self.squares[row][0] == 2 else CROSS_COLOR
+                    iPos = (20, row * SQSIZE + SQSIZE // 2)
+                    fPos = (WIDTH - 20, row * SQSIZE + SQSIZE // 2)
+                    p.draw.line(screen, color, iPos, fPos, LINE_WIDTH)
                 return self.squares[row][0]
 
         if self.squares[0][0] == self.squares[1][1] == self.squares[2][2] != 0:
+            if show:
+                color = CIRC_COLOR if self.squares[1][1] == 2 else CROSS_COLOR
+                iPos = (20, 20)
+                fPos = (WIDTH - 20, HEIGHT - 20)
+                p.draw.line(screen, color, iPos, fPos, CROSS_WIDTH)
             return self.squares[1][1]
 
         if self.squares[2][0] == self.squares[1][1] == self.squares[0][2] != 0:
+            if show:
+                color = CIRC_COLOR if self.squares[1][1] == 2 else CROSS_COLOR
+                iPos = (20, HEIGHT - 20)
+                fPos = (WIDTH - 20, 20)
+                p.draw.line(screen, color, iPos, fPos, CROSS_WIDTH)
             return self.squares[1][1]
 
         return 0
@@ -122,7 +142,7 @@ class Game:
         self.gamemode = "ai" if self.gamemode == "pvp" else "pvp"
 
     def isover(self):
-        return self.board.final_state() != 0 or self.board.isfull()
+        return self.board.final_state(show=True) != 0 or self.board.isfull()
 
     def reset(self):
         self.__init__()
