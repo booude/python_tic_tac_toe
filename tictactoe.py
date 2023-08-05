@@ -121,6 +121,9 @@ class Game:
     def change_gamemode(self):
         self.gamemode = "ai" if self.gamemode == "pvp" else "pvp"
 
+    def isover(self):
+        return self.board.final_state() != 0 or self.board.isfull()
+
     def reset(self):
         self.__init__()
 
@@ -201,14 +204,6 @@ def main():
                 p.quit()
                 sys.exit()
 
-            if event.type == p.MOUSEBUTTONDOWN:
-                pos = event.pos
-                row = pos[1] // SQSIZE
-                col = pos[0] // SQSIZE
-
-                if board.empty_sqr(row, col):
-                    game.make_move(row, col)
-
             if event.type == p.KEYDOWN:
                 if event.key == p.K_ESCAPE:
                     p.quit()
@@ -228,11 +223,25 @@ def main():
                 if event.key == p.K_1:
                     ai.level = 1
 
-        if game.gamemode == "ai" and game.player == ai.player:
+            if event.type == p.MOUSEBUTTONDOWN:
+                pos = event.pos
+                row = pos[1] // SQSIZE
+                col = pos[0] // SQSIZE
+
+                if board.empty_sqr(row, col) and game.running:
+                    game.make_move(row, col)
+
+                    if game.isover():
+                        game.running = False
+
+        if game.gamemode == "ai" and game.player == ai.player and game.running:
             p.display.update()
 
             row, col = ai.eval(board)
             game.make_move(row, col)
+
+            if game.isover():
+                game.running = False
 
         p.display.update()
 
