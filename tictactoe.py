@@ -1,4 +1,5 @@
 import random
+import copy
 import sys
 import pygame as p
 import numpy as np
@@ -75,7 +76,13 @@ class Game:
         self.running = True
         self.show_lines()
 
+    def make_move(self, row, col):
+        self.board.mark_sqr(row, col, self.player)
+        self.draw_fig(row, col)
+        self.next_turn()
+
     def show_lines(self):
+        screen.fill(BG_COLOR)
         p.draw.line(screen, LINE_COLOR, (SQSIZE, 0), (SQSIZE, HEIGHT), LINE_WIDTH)
         p.draw.line(
             screen,
@@ -111,9 +118,15 @@ class Game:
     def next_turn(self):
         self.player = self.player % 2 + 1
 
+    def change_gamemode(self):
+        self.gamemode = "ai" if self.gamemode == "pvp" else "pvp"
+
+    def reset(self):
+        self.__init__()
+
 
 class AI:
-    def __init__(self, level=0, player=2) -> None:
+    def __init__(self, level=1, player=2) -> None:
         self.level = level
         self.player = player
 
@@ -123,12 +136,57 @@ class AI:
 
         return empty_sqrs[idx]
 
+    def minmax(self, board, maximizing):
+        case = board.final_state()
+
+        if case == 1:
+            return 1, None
+
+        if case == 2:
+            return -1, None
+
+        elif board.isfull():
+            return 0, None
+
+        if maximizing:
+            max_eval = -100
+            best_move = None
+            empty_sqrs = board.get_empty_sqrs()
+
+            for row, col in empty_sqrs:
+                temp_board = copy.deepcopy(board)
+                temp_board.mark_sqr(row, col, 1)
+                eval = self.minmax(temp_board, False)[0]
+                if eval > max_eval:
+                    max_eval = eval
+                    best_move = (row, col)
+
+            return max_eval, best_move
+
+        elif not maximizing:
+            min_eval = 100
+            best_move = None
+            empty_sqrs = board.get_empty_sqrs()
+
+            for row, col in empty_sqrs:
+                temp_board = copy.deepcopy(board)
+                temp_board.mark_sqr(row, col, self.player)
+                eval = self.minmax(temp_board, True)[0]
+                if eval < min_eval:
+                    min_eval = eval
+                    best_move = (row, col)
+
+            return min_eval, best_move
+
     def eval(self, main_board):
         if self.level == 0:
             eval = "random"
             move = self.rnd(main_board)
         else:
             eval, move = self.minmax(main_board, False)
+
+        print(f"AI has chosen to mark the square in pos {move} with an eval of {eval}")
+
         return move
 
 
@@ -149,18 +207,32 @@ def main():
                 col = pos[0] // SQSIZE
 
                 if board.empty_sqr(row, col):
-                    board.mark_sqr(row, col, 1)
-                    game.draw_fig(row, col)
-                    game.next_turn()
+                    game.make_move(row, col)
+
+            if event.type == p.KEYDOWN:
+                if event.key == p.K_ESCAPE:
+                    p.quit()
+                    sys.exit()
+
+                if event.key == p.K_r:
+                    game.reset()
+                    board = game.board
+                    ai = game.ai
+
+                if event.key == p.K_g:
+                    game.change_gamemode()
+
+                if event.key == p.K_0:
+                    ai.level = 0
+
+                if event.key == p.K_1:
+                    ai.level = 1
 
         if game.gamemode == "ai" and game.player == ai.player:
             p.display.update()
 
             row, col = ai.eval(board)
-
-            board.mark_sqr(row, col, 1)
-            game.draw_fig(row, col)
-            game.next_turn()
+            game.make_move(row, col)
 
         p.display.update()
 
